@@ -4,12 +4,13 @@ using Microsoft.eShopOnContainers.Services.Ordering.Domain.AggregatesModel.Buyer
 using Microsoft.Extensions.Logging;
 using Ordering.Domain.Events;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Ordering.API.Application.DomainEventHandlers.OrderStartedEvent
 {
     public class ValidateOrAddBuyerAggregateWhenOrderStartedDomainEventHandler 
-                        : IAsyncNotificationHandler<OrderStartedDomainEvent>
+                        : INotificationHandler<OrderStartedDomainEvent>
     {
         private readonly ILoggerFactory _logger;
         private readonly IBuyerRepository _buyerRepository;
@@ -22,18 +23,15 @@ namespace Ordering.API.Application.DomainEventHandlers.OrderStartedEvent
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task Handle(OrderStartedDomainEvent orderStartedEvent)
+        public async Task Handle(OrderStartedDomainEvent orderStartedEvent, CancellationToken cancellationToken)
         {
             var cardTypeId = (orderStartedEvent.CardTypeId != 0) ? orderStartedEvent.CardTypeId : 1;
-
-            var userGuid = _identityService.GetUserIdentity();
-
-            var buyer = await _buyerRepository.FindAsync(userGuid);
+            var buyer = await _buyerRepository.FindAsync(orderStartedEvent.UserId);
             bool buyerOriginallyExisted = (buyer == null) ? false : true;
 
             if (!buyerOriginallyExisted)
             {                
-                buyer = new Buyer(userGuid);
+                buyer = new Buyer(orderStartedEvent.UserId);
             }
 
             buyer.VerifyOrAddPaymentMethod(cardTypeId,

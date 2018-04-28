@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace UnitTest.Ordering.Application
 {
+    using global::Ordering.API.Application.Models;
     using MediatR;
     using System.Collections;
     using System.Collections.Generic;
@@ -48,7 +49,8 @@ namespace UnitTest.Ordering.Application
 
             //Act
             var handler = new CreateOrderCommandHandler(_mediator.Object, _orderRepositoryMock.Object, _identityServiceMock.Object);
-            var result = await handler.Handle(fakeOrderCmd);
+            var cltToken = new System.Threading.CancellationToken();
+            var result = await handler.Handle(fakeOrderCmd, cltToken);
 
             //Assert
             Assert.False(result);
@@ -68,13 +70,14 @@ namespace UnitTest.Ordering.Application
 
         private Order FakeOrder()
         {
-            return new Order(new Address("street", "city", "state", "country", "zipcode"), 1, "12", "111", "fakeName", DateTime.Now.AddYears(1));
+            return new Order("1", new Address("street", "city", "state", "country", "zipcode"), 1, "12", "111", "fakeName", DateTime.Now.AddYears(1));
         }
 
         private CreateOrderCommand FakeOrderRequestWithBuyer(Dictionary<string, object> args = null)
         {
             return new CreateOrderCommand(
-                new List<OrderItemDTO>(),
+                new List<BasketItem>(),
+                userId: args != null && args.ContainsKey("userId") ? (string)args["userId"] : null,
                 city: args != null && args.ContainsKey("city") ? (string)args["city"] : null,
                 street: args != null && args.ContainsKey("street") ? (string)args["street"] : null,
                 state: args != null && args.ContainsKey("state") ? (string)args["state"] : null,
@@ -84,9 +87,7 @@ namespace UnitTest.Ordering.Application
                 cardExpiration: args != null && args.ContainsKey("cardExpiration") ? (DateTime)args["cardExpiration"] : DateTime.MinValue,
                 cardSecurityNumber: args != null && args.ContainsKey("cardSecurityNumber") ? (string)args["cardSecurityNumber"] : "123",
                 cardHolderName: args != null && args.ContainsKey("cardHolderName") ? (string)args["cardHolderName"] : "XXX",
-                cardTypeId: args != null && args.ContainsKey("cardTypeId") ? (int)args["cardTypeId"] : 0,
-                paymentId: args != null && args.ContainsKey("paymentId") ? (int)args["paymentId"] : 0,
-                buyerId: args != null && args.ContainsKey("buyerId") ? (int)args["buyerId"] : 0);                
+                cardTypeId: args != null && args.ContainsKey("cardTypeId") ? (int)args["cardTypeId"] : 0);               
         }
     }
 }
